@@ -2,7 +2,7 @@
 #include "Job.hpp"
 
 
-uint64_t Synergy::Job::sLastId = 0;
+Synergy::Job::id_t Synergy::Job::sLastId = 1;
 
 
 Synergy::Job::Job(MasterMode *master, const char *task, uint8_t taskLength)
@@ -10,8 +10,8 @@ Synergy::Job::Job(MasterMode *master, const char *task, uint8_t taskLength)
     mTask(task),
     mTaskLength(taskLength),
     mSlave(nullptr),
-    mId(getId()),
-    mHeartbeat(0)
+    mHeartbeat(0),
+    mId(getId())
 {
 
 }

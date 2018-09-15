@@ -3,7 +3,7 @@
 
 
 unsigned long Synergy::Slave::HeartbeatTimeout = 5000;
-unsigned long Synergy::Slave::HeartbeatPeriod = 100;
+unsigned long Synergy::Slave::HeartbeatPeriod = 1000;
 
 
 Synergy::Slave::Slave(const IPAddress &addr)

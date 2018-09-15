@@ -29,6 +29,6 @@ public:
     virtual void updateHeartbeat() override;
     virtual void emit() override;
     virtual JobMessage message() const override;
-    virtual void finished(uint64_t id, Slave *slave) override;
+    virtual void finished(Slave *slave) override;
 
 };

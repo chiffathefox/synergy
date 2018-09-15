@@ -3,6 +3,7 @@
 
 
 #include "Message.hpp"
+#include "Job.hpp"
 
 
 namespace Synergy
@@ -16,7 +17,7 @@ class Synergy::JobMessage : public Message
 
     struct MessageStruct
     {
-        uint64_t jobId;
+        Job::id_t jobId;
     };
 
 
@@ -28,13 +29,13 @@ public:
     explicit JobMessage(char *buffer, int length, Type type);
 
 
-    inline uint64_t jobId() const
+    inline Job::id_t jobId() const
     {
         return mMessage->jobId;
     }
 
 
-    inline void setJobId(uint64_t jobId)
+    inline void setJobId(Job::id_t jobId)
     {
         mMessage->jobId = jobId;
     }

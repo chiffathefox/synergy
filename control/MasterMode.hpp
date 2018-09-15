@@ -7,6 +7,8 @@
 
 #include "Slave.hpp"
 #include "Job.hpp"
+#include "Mode.hpp"
+#include "RoughSquareWave.hpp"
 
 
 namespace Synergy
@@ -15,13 +17,14 @@ namespace Synergy
 };
 
 
-class Synergy::MasterMode
+class Synergy::MasterMode : public Mode
 {
 
     WiFiUDP mUdp;
     bool mRunning;
     std::map<Slave::id_t, Slave *> mSlaves;
-    std::map<uint64_t, Job *> mJobs;
+    std::map<Job::id_t, Job *> mJobs;
+    RoughSquareWave mLed;
 
 
 public:
@@ -37,9 +40,9 @@ public:
     void emitJob(Job *job);
     void jobFinished(Job *job);
 
-    void start(const char *ssid, const char *pwd);
-    void stop();
+    virtual void start(const char *ssid, const char *pwd) override;
+    virtual void stop() override;
 
-    void loop();
+    virtual void loop() override;
 
 };

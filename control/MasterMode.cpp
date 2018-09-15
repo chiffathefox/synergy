@@ -12,7 +12,8 @@ const uint16_t Synergy::MasterMode::Port = 1001;
 
 
 Synergy::MasterMode::MasterMode()
-    : mRunning(false)
+    : mRunning(false),
+    mLed(LED_BUILTIN, 50, 500)
 {
 }
 
@@ -45,6 +46,8 @@ void Synergy::MasterMode::emitJob(Job *job)
 
 void Synergy::MasterMode::jobFinished(Job *job)
 {
+    Serial.println("UARTjbEnd");
+
     delete job;
 }
 
@@ -61,6 +64,7 @@ void Synergy::MasterMode::start(const char *ssid, const char *pwd)
     delay(100);
 
     mUdp.begin(Port);
+    mLed.start();
 
     mRunning = true;
 
@@ -69,8 +73,9 @@ void Synergy::MasterMode::start(const char *ssid, const char *pwd)
 
 
 void Synergy::MasterMode::stop() {
-    if (!mRunning) {
+    if (mRunning) {
         mUdp.stop();
+        mLed.stop();
         WiFi.mode(WIFI_STA);
 
         mRunning = false;
@@ -83,50 +88,66 @@ void Synergy::MasterMode::stop() {
 void Synergy::MasterMode::loop()
 {
     if (mRunning) {
+        mLed.loop();
+
         int n = mUdp.parsePacket();
 
         if (n) {
             IPAddress addr = mUdp.remoteIP();
+            Slave::id_t slaveId = Slave(addr).id();
 
-            Serial.printf("Received %d bytes from %s", n,
-                    addr.toString().c_str());
-
-            if ((static_cast<uint32_t>(addr) ^ WiFi.localIP()) & 0xFFFFFF00) {
+            if ((static_cast<uint32_t>(addr) ^ WiFi.softAPIP()) & 0x00FFFFFF) {
                 
-                Serial.println("Ignored a foreign IP");
+                Serial.printf("Ignored a packet from an IP from a foreign " 
+                        "subnet (%s)\n", addr.toString().c_str());
 
                 return;
             }
 
-            Slave *slave = mSlaves[addr[3]];
-
-            if (slave == nullptr) {
-                slave = new Slave(addr);
-                mSlaves[slave->id()] = slave;
-
-                Serial.println("Added a new slave");
-            }
-
-            slave->updateHeartbeat();
-
-            char buffer[255];
+            char buffer[Message::maxRawLength()];
 
             n = mUdp.read(buffer, sizeof (buffer));
 
             Message message(buffer, n, Message::Type::None);
 
             if (!message.ok()) {
+                Serial.printf("Received a corrupt message from #%u\n", slaveId);
+
                 return;
             }
 
+            Slave *slave = mSlaves[slaveId];
+
+            if (slave == nullptr) {
+                if (message.type() == Message::Type::SlaveBeacon) {
+                    slave = new Slave(addr);
+                    mSlaves[slaveId] = slave;
+
+                    Serial.printf("Added a new slave #%u\n", slaveId);
+                } else {
+                    Serial.printf("Received a valid message from an unknown "
+                            "slave #%u\n", slaveId);
+
+                    return;
+                }
+            }
+
+            slave->updateHeartbeat();
 
             switch (message.type()) {
 
 
-            case Message::Type::Beacon:
-            case Message::Type::NewJob:
+            default:
 
-                return;
+                Serial.printf("Ignored a %u message from #%u\n",
+                        message.type(), slaveId);
+
+                break;
+
+
+            case Message::Type::SlaveBeacon:
+
+                break;
 
 
             case Message::Type::JobFinished:
@@ -134,7 +155,8 @@ void Synergy::MasterMode::loop()
                 JobFinishedMessage message(buffer, n);
 
                 if (!message.ok()) {
-                    Serial.println("Received a corrupt JonFinishedMessage");
+                    Serial.printf("Received a corrupt JobFinishedMessage " 
+                            "from #%u\n", slaveId);
 
                     return;
                 }
@@ -142,12 +164,16 @@ void Synergy::MasterMode::loop()
                 auto jobId = message.jobId();
 
                 if (mJobs.find(jobId) == mJobs.end()) {
-                    Serial.printf("Received a stale job %llu\n", jobId);
+                    Serial.printf("Received a stale job %lu\n",
+                            (unsigned long) jobId);
 
                     return;
                 }
 
-                mJobs[jobId]->finished(jobId, slave);
+                mJobs[jobId]->finished(slave);
+
+                Serial.printf("#%u has finished job #%lu\n", slaveId,
+                        (unsigned long) jobId);
 
                 break;
 

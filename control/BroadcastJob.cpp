@@ -17,6 +17,7 @@ void Synergy::BroadcastJob::updateHeartbeat()
     for (auto slave : mSlaves) {
         setSlave(slave);
         mMessage.setJobId(id());
+        mMessage.setTask(task(), taskLength());
         master()->emitJob(this);
     }
 
@@ -49,7 +50,7 @@ Synergy::JobMessage Synergy::BroadcastJob::message() const
 }
 
 
-void Synergy::BroadcastJob::finished(uint64_t id, Slave *slave)
+void Synergy::BroadcastJob::finished(Slave *slave)
 {
     for (auto it = mSlaves.begin(); it != mSlaves.end(); it++) {
         if (*it == slave) {

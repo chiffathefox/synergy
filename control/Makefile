@@ -2,8 +2,8 @@
 ECHO_PREFIX=Makefile: 
 ARDUINO_ROOT=/home/denis/arduino/arduino
 ARDUINO=$(ARDUINO_ROOT)/arduino
-TARGET=synergy
-TTY=/dev/ttyUSB*
+TARGET=control
+TTY=/dev/ttyUSB0
 TTY_BAUD=9600
 
 

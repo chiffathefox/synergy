@@ -24,8 +24,9 @@ public:
 
     enum Type : uint8_t
     {
-        None,
-        Beacon,
+        None = 0,
+        SlaveBeacon,
+        MasterBeacon,
         NewJob,
         JobFinished
     };
@@ -111,6 +112,12 @@ private:
 public:
 
 
+    static inline int maxRawLength()
+    {
+        return sizeof (MessageStruct);
+    }
+
+
     inline char *raw() const
     {
         return reinterpret_cast<char *>(mMessage);
@@ -119,8 +126,7 @@ public:
     
     inline int rawLength() const
     {
-        return sizeof (MessageStruct) - offsetof(MessageStruct, buffer) + 
-            bufferLength();
+        return offsetof(MessageStruct, buffer) + bufferLength();
     }
 
 

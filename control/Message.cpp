@@ -11,6 +11,7 @@ Synergy::Message::Message(char *buffer, int length, Type type)
         mMessage = reinterpret_cast<MessageStruct *>(mBuffer);
 
         setType(type);
+        setBufferLength(0);
     }
 
     if (length < 2) {
@@ -18,7 +19,7 @@ Synergy::Message::Message(char *buffer, int length, Type type)
     }
 
     mMessage = reinterpret_cast<MessageStruct *>(buffer);
-    setOk(this->type() == type);
+    setOk(this->type() == type || type == Type::None);
 }
 
 

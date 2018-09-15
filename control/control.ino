@@ -6,6 +6,8 @@
 
 #include "MasterMode.hpp"
 #include "SlaveMode.hpp"
+#include "BroadcastJob.hpp"
+#include "RoughSquareWave.hpp"
 
 
 enum Status {
@@ -13,11 +15,6 @@ enum Status {
     STATUS_DONE
 };
 
-enum Mode {
-    MODE_IDLE = 0,
-    MODE_MASTER,
-    MODE_SLAVE
-};
 
 typedef Status (*CmdHandler)();
 
@@ -31,69 +28,24 @@ static std::map<std::string, unsigned long> stat;
 
 static std::string ssid;
 static std::string pwd;
-static Mode mode;
-static Mode lastMode;
+static std::string cmdBuffer;
 
+static Synergy::Mode *mode = nullptr;
 static Synergy::MasterMode master;
 static Synergy::SlaveMode slave;
+static Synergy::RoughSquareWave led(LED_BUILTIN, 1000, 50);
 
 
-static void start()
+static void setMode(Synergy::Mode *newMode, const char *ssid, const char *pwd)
 {
-    switch (lastMode) {
-
-
-    case MODE_IDLE:
-
-        break;
-
-
-    case MODE_MASTER:
-
-        master.stop();
-
-        break;
-
-
-    case MODE_SLAVE:
-
-        slave.stop();
-
-        break;
-
-
+    if (mode != nullptr) {
+        mode->stop();
     }
 
-    switch (mode) {
-
-    
-    case MODE_IDLE:
-
-        break;
-
-
-    case MODE_MASTER:
-
-        master.start(ssid.c_str(), pwd.c_str());
-
-        break;
-
-
-    case MODE_SLAVE:
-
-        slave.start(ssid.c_str(), pwd.c_str());
-
-        break;
-
-
-    }
-}
-
-
-static void setMode(Mode newMode)
-{
-    lastMode = mode;
     mode = newMode;
+
+    led.stop();
+    mode->start(ssid, pwd);
 }
 
 
@@ -106,6 +58,8 @@ static Status cmdStart()
         CMD_START_SSID,
         CMD_START_PWD
     } cmdState;
+
+    static Synergy::Mode *cmdMode;
 
     while (Serial.available()) {
         char c = Serial.read();
@@ -133,9 +87,9 @@ static Status cmdStart()
         case CMD_START_MODE:
 
             if (c == 'M') {
-                setMode(MODE_MASTER);
+                cmdMode = &master;
             } else if (c == 'S') {
-                setMode(MODE_SLAVE);
+                cmdMode = &slave;
             } else {
                 updateStat("CMD_START_WRONG_MODE");
                 cmdState = CMD_START_SPACE;
@@ -187,11 +141,10 @@ static Status cmdStart()
 
         case CMD_START_PWD:
 
-
             if (c == ' ') {
                 updateStat("CMD_START_SPACE_IN_PWD");
             } else if (c == '\n') {
-                start();
+                setMode(cmdMode, ssid.c_str(), pwd.c_str());
             } else if (pwd.length() >= MaxPwdLength) {
                 updateStat("CMD_START_PWD_TOO_LONG");
             } else {
@@ -209,6 +162,81 @@ static Status cmdStart()
     }
 
     return STATUS_OK;
+}
+
+
+static Status cmdBroadcast()
+{
+    static enum {
+        CmdBroadcastFirstSpace = 0,
+        CmdBroadcastTask
+    } state;
+
+    if (mode != &master) {
+        updateStat("CMD_BROADCAST_NOT_A_MASTER");
+
+        return STATUS_DONE;
+    }
+
+
+    while (Serial.available()) {
+        char c = Serial.read();
+
+        switch (state) {
+
+
+        case CmdBroadcastFirstSpace:
+
+            if (c != ' ') {
+                updateStat("CMD_BROADCAST_NO_FIRST_SPACE");
+
+                return STATUS_DONE;
+            }
+
+            cmdBuffer.clear();
+            state = CmdBroadcastTask;
+
+            break;
+
+
+        case CmdBroadcastTask:
+
+            if (c != '\n') {
+                cmdBuffer += c;
+
+                return STATUS_OK;
+            }
+
+            /* `job` gets deleted by `MasterMode::jobFinished` */
+
+            auto job = new Synergy::BroadcastJob(&master,
+                    cmdBuffer.c_str(), cmdBuffer.length());
+
+            job->emit();
+            state = CmdBroadcastFirstSpace;
+
+            Serial.printf("broadcasted a new job #%lu\n", 
+                    (unsigned long) job->id());
+
+            return STATUS_DONE;
+
+
+        }
+    }
+
+    return STATUS_OK;
+}
+
+
+static Status cmdJobFinished()
+{
+    if (mode != &slave) {
+        updateStat("CMD_JOB_FINISHED_NOT_A_SLAVE");
+    } else {
+        slave.currentJobFinished();
+    }
+
+    return STATUS_DONE;
 }
 
 
@@ -316,23 +344,31 @@ static void parseSerial()
 
 void setup()
 {
+    led.start();
     WiFi.persistent(false);
+    WiFi.mode(WIFI_STA);
 
     delay(1000);
     Serial.begin(115200);
     Serial.println();
 
     handlers["start"] = &cmdStart;
-
-    pinMode(LED_BUILTIN, OUTPUT);
-    digitalWrite(LED_BUILTIN, LOW);
+    handlers["brdct"] = &cmdBroadcast;
+    handlers["jbEnd"] = &cmdJobFinished;
 
     ssid.reserve(MaxSsidLength);
     pwd.reserve(MaxPwdLength);
+    cmdBuffer.reserve(255);
 }
 
 
 void loop()
 {
     parseSerial();
+
+    if (mode != nullptr) {
+        mode->loop();
+    }
+
+    led.loop();
 }

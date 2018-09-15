@@ -12,6 +12,8 @@ Synergy::NewJobMessage::NewJobMessage(char *buffer, int length)
             this->buffer() + JobMessage::offset());
 
     if (length == -1) {
+        setTask(nullptr, 0);
+
         return;
     }
 
@@ -36,7 +38,10 @@ void Synergy::NewJobMessage::setTask(const char *task, uint8_t taskLength)
         taskLength = maxLength;
     }
 
-    std::copy(task, task + taskLength, mMessage->task);
+    if (task) {
+        std::copy(task, task + taskLength, mMessage->task);
+    }
+
     mMessage->taskLength = taskLength;
 
     setBufferLength(JobMessage::offset() + sizeof (uint8_t) + taskLength);

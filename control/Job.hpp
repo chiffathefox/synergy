@@ -5,37 +5,33 @@
 #include <cstdint>
 
 #include "Slave.hpp"
-#include "JobMessage.hpp"
 
 
 namespace Synergy
 {
     class MasterMode;
+    class JobMessage;
     class Job;
 };
-
-
-#include "MasterMode.hpp"
 
 
 class Synergy::Job
 {
 
-    static uint64_t sLastId;
-
-
     MasterMode *mMaster;
     const char *mTask;
     uint8_t mTaskLength;
     Slave *mSlave;
-    uint64_t mId;
     unsigned long mHeartbeat;
 
 
 public:
 
 
-    inline static uint64_t getId()
+    typedef short id_t;
+
+
+    inline static id_t getId()
     {
         return sLastId++;
     }
@@ -48,7 +44,7 @@ public:
 
     virtual void emit() = 0;
     virtual JobMessage message() const = 0;
-    virtual void finished(uint64_t id, Slave *slave) = 0;
+    virtual void finished(Slave *slave) = 0;
 
 
     inline MasterMode *master() const
@@ -81,7 +77,7 @@ public:
     }
 
 
-    inline uint64_t id() const
+    inline id_t id() const
     {
         return mId;
     }
@@ -93,4 +89,15 @@ public:
     }
 
 
+private:
+
+    static id_t sLastId;
+
+
+    id_t mId;
+
 };
+
+
+#include "MasterMode.hpp"
+#include "JobMessage.hpp"

@@ -1,4 +1,5 @@
 
+#include <Arduino.h>
 #include "JobMessage.hpp"
 
 
@@ -8,8 +9,10 @@ Synergy::JobMessage::JobMessage(char *buffer, int length, Type type)
     mMessage = reinterpret_cast<MessageStruct *>(
             this->buffer() + Message::offset());
 
+
     if (length == -1) {
         setBufferLength(sizeof (MessageStruct));
+        setJobId(0);
 
         return;
     }
