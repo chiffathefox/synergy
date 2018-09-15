@@ -88,6 +88,13 @@ void Synergy::MasterMode::stop() {
 
 void Synergy::MasterMode::loop()
 {
+
+    /* TODO: iterate over jobs in order to implement heartbeat. */
+    /* TODO: send a response once a job finishes */
+    /* TODO: repeat JobFinishedMessage on slaves */
+    /* TODO: job timeout */
+    /* TODO: cookies */
+
     if (mRunning) {
         mLed.loop();
 

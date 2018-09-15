@@ -170,6 +170,8 @@ void Synergy::begin()
 
     while (!controlSerial());
 
+    /* TODO: delay? */
+
     controlSerial()->print("UARTstart ");
     controlSerial()->print(mode() == Master ? "M " : "S ");
     controlSerial()->print(ssid());
