@@ -4,34 +4,43 @@
 #include <WiFiClient.h>
 #include <ESP8266WebServer.h>
 
+#include "MasterMode.hpp"
+#include "SlaveMode.hpp"
+
 
 enum Status {
     STATUS_OK,
     STATUS_DONE
 };
 
+enum Mode {
+    MODE_IDLE = 0,
+    MODE_MASTER,
+    MODE_SLAVE
+};
+
 typedef Status (*CmdHandler)();
 
 
 static const int CmdNameLength = 5;
- 
+static const int MaxSsidLength = 16;
+static const int MaxPwdLength = 16;
+
 static std::map<std::string, CmdHandler> handlers;
 static std::map<std::string, unsigned long> stat;
 
-static const int MaxSsidLength = 16;
-static const int MaxPwdLength = 16;
 static std::string ssid;
 static std::string pwd;
-static enum {
-    MODE_IDLE = 0,
-    MODE_MASTER,
-    MODE_SLAVE
-} mode;
+static Mode mode;
+static Mode lastMode;
+
+static Synergy::MasterMode master;
+static Synergy::SlaveMode slave;
 
 
-static void shutdown()
+static void start()
 {
-    switch (mode) {
+    switch (lastMode) {
 
 
     case MODE_IDLE:
@@ -41,6 +50,39 @@ static void shutdown()
 
     case MODE_MASTER:
 
+        master.stop();
+
+        break;
+
+
+    case MODE_SLAVE:
+
+        slave.stop();
+
+        break;
+
+
+    }
+
+    switch (mode) {
+
+    
+    case MODE_IDLE:
+
+        break;
+
+
+    case MODE_MASTER:
+
+        master.start(ssid.c_str(), pwd.c_str());
+
+        break;
+
+
+    case MODE_SLAVE:
+
+        slave.start(ssid.c_str(), pwd.c_str());
+
         break;
 
 
@@ -48,46 +90,10 @@ static void shutdown()
 }
 
 
-static void start()
+static void setMode(Mode newMode)
 {
-    if (WiFi.isConnected()) {
-        WiFi.disconnect();
-
-        while (WiFi.isConnected()) {
-            delay(100);
-        }
-    }
-
-    switch (mode) {
-
-
-    case MODE_MASTER:
-
-        WiFi.mode(WIFI_AP);
-        WiFi.softAP(ssid.c_str(), pwd.c_str());
-        Serial.print("brought up");
-
-        break;
-
-
-    case MODE_SLAVE:
-
-        WiFi.mode(WIFI_STA);
-        WiFi.begin(ssid.c_str(), pwd.c_str());
-
-        Serial.print("connect to");
-
-        break;
-
-
-    }
-
-    Serial.print(" AP with ssid = ");
-    Serial.print(ssid.c_str());
-    Serial.print(" and pwd = ");
-    Serial.println(pwd.c_str());
-
-    delay(100);
+    lastMode = mode;
+    mode = newMode;
 }
 
 
@@ -127,9 +133,9 @@ static Status cmdStart()
         case CMD_START_MODE:
 
             if (c == 'M') {
-                mode = MODE_MASTER;
+                setMode(MODE_MASTER);
             } else if (c == 'S') {
-                mode = MODE_SLAVE;
+                setMode(MODE_SLAVE);
             } else {
                 updateStat("CMD_START_WRONG_MODE");
                 cmdState = CMD_START_SPACE;
@@ -228,8 +234,7 @@ static void parseSerial()
     static CmdHandler currentHandler;
 
     while (Serial.available()) {
-        Serial.println(Serial.available());
-        char c;
+        char c = 0;
 
         if (frameState < FRAME_STARTED) {
             c = Serial.read();
@@ -311,6 +316,8 @@ static void parseSerial()
 
 void setup()
 {
+    WiFi.persistent(false);
+
     delay(1000);
     Serial.begin(115200);
     Serial.println();
