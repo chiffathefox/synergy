@@ -14,20 +14,34 @@ namespace Synergy
 class Synergy::JobMessage : public Message
 {
 
-    struct JobMessageStruct
+    struct MessageStruct
     {
         uint64_t jobId;
     };
 
 
-    JobMessageStruct *mMessage;
+    MessageStruct *mMessage;
 
 
 public:
 
     explicit JobMessage(char *buffer, int length, Type type);
 
-    uint64_t jobId() const;
-    void setJobId(uint64_t jobId);
+
+    inline uint64_t jobId() const
+    {
+        return mMessage->jobId;
+    }
+
+
+    inline void setJobId(uint64_t jobId)
+    {
+        mMessage->jobId = jobId;
+    }
+
+
+protected:
+
+    virtual uint8_t offset() const override;
 
 };

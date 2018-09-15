@@ -4,6 +4,7 @@
 #include "Message.hpp"
 #include "NewJobMessage.hpp"
 #include "JobFinishedMessage.hpp"
+#include "SlaveMode.hpp"
 #include "MasterMode.hpp"
 
 
@@ -22,23 +23,29 @@ Synergy::MasterMode::~MasterMode()
 }
 
 
-std::map<uint8_t, Synergy::Slave *> Synergy::MasterMode::slaves() const
+std::map<Synergy::Slave::id_t, Synergy::Slave *>
+Synergy::MasterMode::slaves() const
 {
     return mSlaves;
 }
 
 
-void Synergy::MasterMode::addJob(const Job &job)
+void Synergy::MasterMode::emitJob(Job *job)
 {
-    mJobs[job.id()] = job;
+    mJobs[job->id()] = job;
 
-    mUdp.beginPacket(job.addr(), SlaveMode::Port);
+    auto slave = job->slave();
+    auto message = job->message();
 
-    NewJobMessage message(nullptr, -1);
+    mUdp.beginPacket(slave->addr(), SlaveMode::Port);
+    mUdp.write(message.raw(), message.rawLength());
+    mUdp.endPacket();
+}
 
-    message.setJobId(job.id());
 
-    mUdp.write(message.raw(), );
+void Synergy::MasterMode::jobFinished(Job *job)
+{
+    delete job;
 }
 
 
@@ -95,7 +102,7 @@ void Synergy::MasterMode::loop()
 
             if (slave == nullptr) {
                 slave = new Slave(addr);
-                mSlaves[addr[3]] = slave;
+                mSlaves[slave->id()] = slave;
 
                 Serial.println("Added a new slave");
             }
@@ -106,7 +113,7 @@ void Synergy::MasterMode::loop()
 
             n = mUdp.read(buffer, sizeof (buffer));
 
-            Message message(buffer, n, Message::Type::Beacon);
+            Message message(buffer, n, Message::Type::None);
 
             if (!message.ok()) {
                 return;
@@ -132,14 +139,15 @@ void Synergy::MasterMode::loop()
                     return;
                 }
 
-                if (mJobs.find(message.jobId()) == mJobs.end()) {
-                    Serial.printf("Received a stale job %llu\n",
-                            message.jobId());
+                auto jobId = message.jobId();
+
+                if (mJobs.find(jobId) == mJobs.end()) {
+                    Serial.printf("Received a stale job %llu\n", jobId);
 
                     return;
                 }
 
-                mJobs[message.jobId()].finished();
+                mJobs[jobId]->finished(jobId, slave);
 
                 break;
 

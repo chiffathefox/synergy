@@ -5,29 +5,20 @@
 Synergy::JobMessage::JobMessage(char *buffer, int length, Type type)
     : Message(buffer, length, type)
 {
-    mMessage = reinterpret_cast<JobMessageStruct *>(this->buffer());
+    mMessage = reinterpret_cast<MessageStruct *>(
+            this->buffer() + Message::offset());
 
     if (length == -1) {
-        setBufferLength(sizeof (JobMessageStruct));
+        setBufferLength(sizeof (MessageStruct));
 
         return;
     }
 
-    if (bufferLength() < sizeof (uint64_t)) {
-        setOk(false);
-
-        return;
-    }
+    setOk(bufferLength() >= offset());
 }
 
 
-uint64_t Synergy::JobMessage::jobId() const
+uint8_t Synergy::JobMessage::offset() const
 {
-    return mMessage->jobId;
-}
-
-
-void Synergy::JobMessage::setJobId(uint64_t jobId)
-{
-    mMessage->jobId = jobId;
+    return Message::offset() + sizeof (MessageStruct);
 }

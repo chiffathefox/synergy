@@ -5,44 +5,25 @@
 uint64_t Synergy::Job::sLastId = 0;
 
 
-Synergy::Job::Job()
-    : mSlave(nullptr),
-    mJobSet(nullptr),
-    mId(sLastId++)
-{
-}
-
-
-Synergy::Job::Job(Slave *slave, JobSet *jobSet)
-    : mSlave(slave),
-    mJobSet(jobSet),
-    mId(sLastId++)
+Synergy::Job::Job(MasterMode *master, const char *task, uint8_t taskLength)
+    : mMaster(master),
+    mTask(task),
+    mTaskLength(taskLength),
+    mSlave(nullptr),
+    mId(getId()),
+    mHeartbeat(0)
 {
 
 }
 
 
-Synergy::Slave *Synergy::Job::slave() const
+Synergy::Job::~Job()
 {
-    return mSlave;
+
 }
 
 
-Synergy::JobSet *Synergy::Job::jobSet() const
+void Synergy::Job::updateHeartbeat()
 {
-    return mJobSet;
-}
-
-
-uint64_t Synergy::Job::id() const
-{
-    return mId;
-}
-
-
-void Synergy::Job::finished()
-{
-    if (jobSet() != nullptr) {
-        jobSet()->finished(*this);
-    }
+    mHeartbeat = millis();
 }

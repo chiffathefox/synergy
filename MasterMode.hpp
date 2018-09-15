@@ -20,8 +20,8 @@ class Synergy::MasterMode
 
     WiFiUDP mUdp;
     bool mRunning;
-    std::map<uint8_t, Slave *> mSlaves;
-    std::map<uint64_t, Job> mJobs;
+    std::map<Slave::id_t, Slave *> mSlaves;
+    std::map<uint64_t, Job *> mJobs;
 
 
 public:
@@ -32,9 +32,10 @@ public:
     MasterMode();
     ~MasterMode();
 
-    std::map<uint8_t, Slave *> slaves() const;
+    std::map<Slave::id_t, Slave *> slaves() const;
 
-    void addJob(const Job &job);
+    void emitJob(Job *job);
+    void jobFinished(Job *job);
 
     void start(const char *ssid, const char *pwd);
     void stop();

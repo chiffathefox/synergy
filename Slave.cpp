@@ -2,32 +2,13 @@
 #include "Slave.hpp"
 
 
+unsigned long Synergy::Slave::HeartbeatTimeout = 5000;
+unsigned long Synergy::Slave::HeartbeatPeriod = 100;
+
+
 Synergy::Slave::Slave(const IPAddress &addr)
-    : mHeartbeat(0)
+    : mAddr(addr),
+    mHeartbeat(0)
 {
-    setAddr(addr);
-}
 
-
-void Synergy::Slave::setAddr(const IPAddress &addr)
-{
-    mAddr = addr;
-}
-
-
-IPAddress Synergy::Slave::addr() const
-{
-    return mAddr;
-}
-
-
-void Synergy::Slave::updateHeartbeat()
-{
-    mHeartbeat = millis();
-}
-
-
-unsigned long Synergy::Slave::heartbeat() const
-{
-    return mHeartbeat;
 }

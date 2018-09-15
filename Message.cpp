@@ -30,49 +30,7 @@ Synergy::Message::~Message()
 }
 
 
-char *Synergy::Message::raw() const
+uint8_t Synergy::Message::offset() const
 {
-    return reinterpret_cast<char *>(mMessage);
-}
-
-
-bool Synergy::Message::ok() const
-{
-    return mOk;
-}
-
-
-void Synergy::Message::setOk(bool ok)
-{
-    mOk = ok;
-}
-
-
-Synergy::Message::Type Synergy::Message::type() const
-{
-    return mMessage->type;
-}
-
-
-void Synergy::Message::setType(Type type)
-{
-    mMessage->type = type;
-}
-
-
-uint8_t Synergy::Message::bufferLength() const
-{
-    return mMessage->bufferLength;
-}
-
-
-void Synergy::Message::setBufferLength(uint8_t bufferLength)
-{
-    mMessage->bufferLength = bufferLength;
-}
-
-
-char *Synergy::Message::buffer() const
-{
-    return mMessage->buffer;
+    return 0;
 }

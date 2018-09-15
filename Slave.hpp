@@ -20,12 +20,45 @@ class Synergy::Slave
 
 public:
 
+
+    typedef uint8_t id_t;
+
+
+    static unsigned long HeartbeatTimeout;
+    static unsigned long HeartbeatPeriod;
+
+
     explicit Slave(const IPAddress &addr);
 
-    void setAddr(const IPAddress &addr);
-    IPAddress addr() const;
 
-    void updateHeartbeat();
-    unsigned long heartbeat() const;
+    inline void updateHeartbeat()
+    {
+        mHeartbeat = millis();
+    }
+
+
+    inline unsigned long heartbeat() const
+    {
+        return mHeartbeat;
+    }
+
+
+    inline IPAddress addr() const
+    {
+        return mAddr;
+    }
+
+
+    inline id_t id() const
+    {
+        return addr()[3];
+    }
+
+
+    inline bool alive() const
+    {
+        return millis() - heartbeat() < HeartbeatTimeout;
+    }
+
 
 };
