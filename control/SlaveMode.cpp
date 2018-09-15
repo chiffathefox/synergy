@@ -2,6 +2,7 @@
 #include <string>
 #include <ESP8266WiFi.h>
 
+#include "Debug.hpp"
 #include "MasterMode.hpp"
 #include "NewJobMessage.hpp"
 #include "JobFinishedMessage.hpp"
@@ -52,7 +53,7 @@ void Synergy::SlaveMode::start(const char *ssid, const char *pwd)
 
     delay(100);
 
-    Serial.printf("Slaved to %s %s\n", ssid, pwd);
+    Debugf("Slaved to %s %s\n", ssid, pwd);
 
     mRunning = true;
 }
@@ -110,8 +111,7 @@ void Synergy::SlaveMode::loop()
         Message message(buffer, n, Message::Type::None);
 
         if (!message.ok()) {
-            Serial.printf("Received a corrupt message from %s\n",
-                    addrStr.c_str());
+            Debugf("Received a corrupt message from %s\n", addrStr.c_str());
 
             return;
         }
@@ -121,7 +121,7 @@ void Synergy::SlaveMode::loop()
 
         default:
 
-            Serial.printf("Ignored a %u message from %s", message.type(),
+            Debugf("Ignored a %u message from %s", message.type(),
                     addrStr.c_str());
 
             break;
@@ -132,7 +132,7 @@ void Synergy::SlaveMode::loop()
             NewJobMessage message(buffer, n);
 
             if (!message.ok()) {
-                Serial.printf("Received a corrupt NewJobMessage from %s\n",
+                Debugf("Received a corrupt NewJobMessage from %s\n",
                         addrStr.c_str());
             }
 
@@ -141,9 +141,9 @@ void Synergy::SlaveMode::loop()
                     message.taskLength()).c_str();
 
             if (jobId < mLastJobId) {
-                Serial.printf("Received a stale job #%lu (%s) from %s. "
-                        "Last job was %lu\n", (unsigned long) jobId, task,
-                        addrStr.c_str(), (unsigned long) mLastJobId);
+                Debugf("Received a stale job #%u (%s) from %s. "
+                        "Last job was %u\n", jobId, task, addrStr.c_str(),
+                        mLastJobId);
 
                 return;
             }
@@ -162,19 +162,21 @@ void Synergy::SlaveMode::loop()
                  * XXX: is it better to stack them?
                  */
 
-                Serial.printf("Dropped a job #%lu (%s) from %s.\n",
-                        (unsigned long) jobId, task, addrStr.c_str());
+                Debugf("Dropped a job #%u (%s) from %s.\n", jobId, task,
+                        addrStr.c_str());
+
+                setCurrentJob(jobId);
+                currentJobFinished();
 
                 return;
             }
 
             setCurrentJob(jobId);
 
-            Serial.printf("Received a new job #%lu (%s) from %s.\n",
-                    (unsigned long) jobId, task, addrStr.c_str());
+            Debugf("Received a new job #%u (%s) from %s.\n",
+                    jobId, task, addrStr.c_str());
 
-            Serial.printf("UARTnwJob %s\n",
-                    std::string(message.task(), message.taskLength()).c_str());
+            Serial.printf("UARTnwJob %s\n", task);
 
             break;
 

@@ -31,6 +31,17 @@ public:
     typedef short id_t;
 
 
+    /*
+     * Generic Arduino Serial class has a 64 byte long buffer,
+     * which means that we can't spit out large chunks at once.
+     * ... So we don't make any...
+     *
+     * 64 - (4 + 5 + 1 + 2) - (1 + 3) - 1 = 47
+     */
+
+    static const uint8_t MaxTaskLength = 47;
+
+
     inline static id_t getId()
     {
         return sLastId++;

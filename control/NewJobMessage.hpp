@@ -17,7 +17,7 @@ class Synergy::NewJobMessage : public JobMessage
     struct MessageStruct
     {
         uint8_t taskLength;
-        char task[247];
+        char task[Synergy::Job::MaxTaskLength];
     };
 
     

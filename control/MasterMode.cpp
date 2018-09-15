@@ -1,6 +1,7 @@
 
 #include <ESP8266WiFi.h>
 
+#include "Debug.hpp"
 #include "Message.hpp"
 #include "NewJobMessage.hpp"
 #include "JobFinishedMessage.hpp"
@@ -46,7 +47,7 @@ void Synergy::MasterMode::emitJob(Job *job)
 
 void Synergy::MasterMode::jobFinished(Job *job)
 {
-    Serial.println("UARTjbEnd");
+    Serial.print("UARTjbEnd\n");
 
     delete job;
 }
@@ -68,7 +69,7 @@ void Synergy::MasterMode::start(const char *ssid, const char *pwd)
 
     mRunning = true;
 
-    Serial.printf("brough up %s %s\n", ssid, pwd);
+    Debugf("brough up %s %s\n", ssid, pwd);
 }
 
 
@@ -98,7 +99,7 @@ void Synergy::MasterMode::loop()
 
             if ((static_cast<uint32_t>(addr) ^ WiFi.softAPIP()) & 0x00FFFFFF) {
                 
-                Serial.printf("Ignored a packet from an IP from a foreign " 
+                Debugf("Ignored a packet from an IP from a foreign " 
                         "subnet (%s)\n", addr.toString().c_str());
 
                 return;
@@ -111,7 +112,7 @@ void Synergy::MasterMode::loop()
             Message message(buffer, n, Message::Type::None);
 
             if (!message.ok()) {
-                Serial.printf("Received a corrupt message from #%u\n", slaveId);
+                Debugf("Received a corrupt message from #%u\n", slaveId);
 
                 return;
             }
@@ -123,9 +124,9 @@ void Synergy::MasterMode::loop()
                     slave = new Slave(addr);
                     mSlaves[slaveId] = slave;
 
-                    Serial.printf("Added a new slave #%u\n", slaveId);
+                    Debugf("Added a new slave #%u\n", slaveId);
                 } else {
-                    Serial.printf("Received a valid message from an unknown "
+                    Debugf("Received a valid message from an unknown "
                             "slave #%u\n", slaveId);
 
                     return;
@@ -139,7 +140,7 @@ void Synergy::MasterMode::loop()
 
             default:
 
-                Serial.printf("Ignored a %u message from #%u\n",
+                Debugf("Ignored a %u message from #%u\n",
                         message.type(), slaveId);
 
                 break;
@@ -155,8 +156,8 @@ void Synergy::MasterMode::loop()
                 JobFinishedMessage message(buffer, n);
 
                 if (!message.ok()) {
-                    Serial.printf("Received a corrupt JobFinishedMessage " 
-                            "from #%u\n", slaveId);
+                    Debugf("Received a corrupt JobFinishedMessage from #%u\n",
+                            slaveId);
 
                     return;
                 }
@@ -164,16 +165,14 @@ void Synergy::MasterMode::loop()
                 auto jobId = message.jobId();
 
                 if (mJobs.find(jobId) == mJobs.end()) {
-                    Serial.printf("Received a stale job %lu\n",
-                            (unsigned long) jobId);
+                    Debugf("Received a stale job %u\n", jobId);
 
                     return;
                 }
 
                 mJobs[jobId]->finished(slave);
 
-                Serial.printf("#%u has finished job #%lu\n", slaveId,
-                        (unsigned long) jobId);
+                Debugf("#%u has finished job #%u\n", slaveId, jobId);
 
                 break;
 

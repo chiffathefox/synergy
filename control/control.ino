@@ -4,6 +4,8 @@
 #include <WiFiClient.h>
 #include <ESP8266WebServer.h>
 
+#include "Debug.hpp"
+#include "Job.hpp"
 #include "MasterMode.hpp"
 #include "SlaveMode.hpp"
 #include "BroadcastJob.hpp"
@@ -202,6 +204,14 @@ static Status cmdBroadcast()
         case CmdBroadcastTask:
 
             if (c != '\n') {
+                if (cmdBuffer.length() > Synergy::Job::MaxTaskLength) {
+                    state = CmdBroadcastFirstSpace;
+
+                    updateStat("CMD_BROADCAST_TASK_TOO_LONG");
+
+                    return STATUS_DONE;
+                }
+
                 cmdBuffer += c;
 
                 return STATUS_OK;
@@ -215,8 +225,7 @@ static Status cmdBroadcast()
             job->emit();
             state = CmdBroadcastFirstSpace;
 
-            Serial.printf("broadcasted a new job #%lu\n", 
-                    (unsigned long) job->id());
+            Debugf("broadcasted a new job #%u\n", job->id());
 
             return STATUS_DONE;
 
@@ -242,8 +251,7 @@ static Status cmdJobFinished()
 
 static void updateStat(const char *key)
 {
-    Serial.print("Update stat ");
-    Serial.println(key);
+    Debugf("Update stat %s\n", key);
     stat[key]++;
 }
 
@@ -350,7 +358,6 @@ void setup()
 
     delay(1000);
     Serial.begin(115200);
-    Serial.println();
 
     handlers["start"] = &cmdStart;
     handlers["brdct"] = &cmdBroadcast;
