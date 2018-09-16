@@ -76,6 +76,8 @@ void Synergy::SlaveMode::start(const char *ssid, const char *pwd)
 void Synergy::SlaveMode::stop()
 {
     if (mRunning) {
+        currentJobFinished();
+
         mUdp.stop();
         mLed.stop();
 
