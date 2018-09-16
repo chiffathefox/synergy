@@ -45,7 +45,7 @@ void loop()
             digitalWrite(LED_BUILTIN, HIGH);
             delay(800);
 
-            synergy.broadcastJob("another one");
+            synergy.broadcastJob("stop");
 
             state = WaitSecondJob;
         }

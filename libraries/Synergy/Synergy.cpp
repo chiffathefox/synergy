@@ -1,4 +1,6 @@
 
+#include <stdlib.h>
+
 #include "Synergy.h"
 
 
@@ -12,10 +14,10 @@ void Synergy::parse()
     while (controlSerial()->available()) {
         char c = controlSerial()->read();
 
-        if (c != 'U') {
-            if (debugSerial() != nullptr) {
-                debugSerial()->print(c);
-            }
+        if ((controlSerial() != debugSerial() || c != 'U') &&
+                debugSerial() != NULL) {
+
+            debugSerial()->print(c);
         }
 
         switch (mMessageState) {
@@ -25,10 +27,6 @@ void Synergy::parse()
 
             if (c == 'U') {
                 mMessageState = MessageA;
-            } else {
-                if (debugSerial() != nullptr) {
-                    //debugSerial()->print(c);
-                }
             }
 
             break;
@@ -137,13 +135,13 @@ Synergy::Synergy(Mode mode, const char *ssid, const char *pwd,
     mJobState(JobNone),
     mMode(mode)
 {
-    if (ssid == nullptr || !*ssid || pwd == nullptr ||
-            controlSerial == nullptr || sInstance) {
+    if (ssid == NULL || !*ssid || pwd == NULL ||
+            controlSerial == NULL || sInstance) {
 
         return;
     }
 
-    auto n = strlen(pwd);
+    size_t n = strlen(pwd);
 
     if (n < MinPwdLength || n > MaxPwdLength) {
         return;
@@ -170,7 +168,7 @@ void Synergy::begin()
 
     while (!controlSerial());
 
-    /* TODO: delay? */
+    delay(100);
 
     controlSerial()->print("UARTstart ");
     controlSerial()->print(mode() == Master ? "M " : "S ");
@@ -214,10 +212,10 @@ const char *Synergy::availableJob()
     if (ok() && mode() == Slave) {
         parse();
 
-        return mJobState == JobAvailable ? mCmdBuffer : nullptr;
+        return mJobState == JobAvailable ? mCmdBuffer : NULL;
     }
 
-    return nullptr;
+    return NULL;
 }
 
 

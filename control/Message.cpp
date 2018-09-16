@@ -3,11 +3,9 @@
 
 
 Synergy::Message::Message(char *buffer, int length, Type type)
-    : mOk(false),
-    mBuffer(nullptr)
+    : mOk(false)
 {
     if (length == -1) {
-        mBuffer = new char[sizeof (MessageStruct)];
         mMessage = reinterpret_cast<MessageStruct *>(mBuffer);
 
         setType(type);
@@ -20,14 +18,6 @@ Synergy::Message::Message(char *buffer, int length, Type type)
 
     mMessage = reinterpret_cast<MessageStruct *>(buffer);
     setOk(this->type() == type || type == Type::None);
-}
-
-
-Synergy::Message::~Message()
-{
-    if (mBuffer != nullptr) {
-        delete mBuffer;
-    }
 }
 
 

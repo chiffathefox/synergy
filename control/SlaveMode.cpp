@@ -30,6 +30,18 @@ void Synergy::SlaveMode::setCurrentJob(Job::id_t jobId)
 }
 
 
+void Synergy::SlaveMode::sendJobFinished(Job::id_t jobId)
+{
+    JobFinishedMessage message;
+
+    message.setJobId(jobId);
+
+    mUdp.beginPacket(masterAddr(), MasterMode::Port);
+    mUdp.write(message.raw(), message.rawLength());
+    mUdp.endPacket();
+}
+
+
 Synergy::SlaveMode::SlaveMode()
     : mRunning(false),
     mLastHeartbeat(0),
@@ -56,6 +68,8 @@ void Synergy::SlaveMode::start(const char *ssid, const char *pwd)
     Debugf("Slaved to %s %s\n", ssid, pwd);
 
     mRunning = true;
+    mLastJobId = 0;
+    mRunningJob = false;
 }
 
 
@@ -85,6 +99,8 @@ void Synergy::SlaveMode::loop()
     if (!mRunning || WiFi.status() != WL_CONNECTED) {
         return;
     }
+
+    /* TODO: reset mLastJobId once we connect to a master */
 
     if (!mUdp) {
         mUdp.begin(Port);
@@ -141,6 +157,8 @@ void Synergy::SlaveMode::loop()
                     message.taskLength()).c_str();
 
             if (jobId < mLastJobId) {
+                sendJobFinished(jobId);
+
                 Debugf("Received a stale job #%u (%s) from %s. "
                         "Last job was %u\n", jobId, task, addrStr.c_str(),
                         mLastJobId);
@@ -165,8 +183,7 @@ void Synergy::SlaveMode::loop()
                 Debugf("Dropped a job #%u (%s) from %s.\n", jobId, task,
                         addrStr.c_str());
 
-                setCurrentJob(jobId);
-                currentJobFinished();
+                sendJobFinished(jobId);
 
                 return;
             }
@@ -191,13 +208,7 @@ void Synergy::SlaveMode::currentJobFinished()
     if (mRunningJob) {
         mRunningJob = false;
 
-        JobFinishedMessage message;
-
-        message.setJobId(mLastJobId);
-
-        mUdp.beginPacket(masterAddr(), MasterMode::Port);
-        mUdp.write(message.raw(), message.rawLength());
-        mUdp.endPacket();
+        sendJobFinished(mLastJobId);
     } else {
         Serial.println("Called currentJobFinished, but not jobs running");
     }

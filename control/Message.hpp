@@ -16,7 +16,6 @@ class Synergy::Message
 {
 
     bool mOk;
-    char *mBuffer;
 
 
 public:
@@ -34,7 +33,6 @@ public:
 
     Message(char *buffer = nullptr, int length = -1,
             Type type = Type::None);
-    ~Message();
 
 
     inline bool ok() const
@@ -102,11 +100,12 @@ private:
     {
         Type type;
         uint8_t bufferLength;
-        char buffer[255];
+        char buffer[64];
     };
 
 
     MessageStruct *mMessage;
+    char mBuffer[sizeof (MessageStruct)];
 
 
 public:

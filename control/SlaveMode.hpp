@@ -29,6 +29,7 @@ class Synergy::SlaveMode : public Mode
 
     IPAddress masterAddr() const;
     void setCurrentJob(Job::id_t jobId);
+    void sendJobFinished(Job::id_t jobId);
 
 
 public:

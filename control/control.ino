@@ -356,7 +356,6 @@ void setup()
     WiFi.persistent(false);
     WiFi.mode(WIFI_STA);
 
-    delay(1000);
     Serial.begin(115200);
 
     handlers["start"] = &cmdStart;
