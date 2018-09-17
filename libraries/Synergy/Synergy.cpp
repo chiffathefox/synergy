@@ -182,7 +182,7 @@ void Synergy::begin()
 void Synergy::broadcastJob(const char *task)
 {
     if (!ok() || mode() != Master || strchr(task, '\n') ||
-            strlen(task) > MaxTaskLength || mJobState == JobRunning) {
+            strlen(task) > MaxTaskLength) {
 
         return;
     }
