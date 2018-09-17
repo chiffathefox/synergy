@@ -102,7 +102,11 @@ void Synergy::SlaveMode::loop()
         return;
     }
 
-    /* TODO: reset mLastJobId once we connect to a master */
+    /* 
+     * TODO: reset mLastJobId once we connect to a master
+     * TODO: for some reason slave stops sending out beacons after
+     *       master goes out offline.
+     */
 
     if (!mUdp) {
         mUdp.begin(Port);
