@@ -13,94 +13,95 @@ void Synergy::MasterMode::parseUdp()
 {
     int n = mUdp.parsePacket();
 
-    if (n) {
-        IPAddress addr = mUdp.remoteIP();
-        Slave::id_t slaveId = Slave(addr).id();
+    if (n <= 0) {
+        return;
+    }
 
-        if ((static_cast<uint32_t>(addr) ^ WiFi.softAPIP()) & 0x00FFFFFF) {
+    IPAddress addr = mUdp.remoteIP();
+    Slave::id_t slaveId = Slave(addr).id();
 
-            debugLog() << "ignored a packet from an IP from a foreign subnet"
-                       << addr.toString().c_str();
+    if ((static_cast<uint32_t>(addr) ^ WiFi.softAPIP()) & 0x00FFFFFF) {
+
+        debugLog() << "ignored a packet from an IP from a foreign subnet"
+            << addr.toString().c_str();
+
+        return;
+    }
+
+    char buffer[Message::maxRawLength()];
+
+    n = mUdp.read(buffer, sizeof (buffer));
+
+    Message message(buffer, n, Message::Type::None);
+
+    if (!message.ok()) {
+        debugWarn() << "received a corrupt message from slave" << slaveId;
+
+        return;
+    }
+
+    Slave *slave = mSlaves[slaveId];
+
+    if (slave == nullptr) {
+        if (message.type() == Message::Type::SlaveBeacon) {
+            slave = new Slave(addr);
+
+            addSlave(slave);
+        } else {
+            debugWarn() << "received a vailid message from an unknown"
+                << "slave" << slaveId;
 
             return;
-        }
-
-        char buffer[Message::maxRawLength()];
-
-        n = mUdp.read(buffer, sizeof (buffer));
-
-        Message message(buffer, n, Message::Type::None);
-
-        if (!message.ok()) {
-            debugWarn() << "received a corrupt message from slave" << slaveId;
-
-            return;
-        }
-
-        Slave *slave = mSlaves[slaveId];
-
-        if (slave == nullptr) {
-            if (message.type() == Message::Type::SlaveBeacon) {
-                slave = new Slave(addr);
-
-                addSlave(slave);
-            } else {
-                debugWarn() << "received a vailid message from an unknown"
-                            << "slave" << slaveId;
-
-                return;
-            }
-        }
-
-        slave->updateHeartbeat();
-
-        switch (message.type()) {
-
-
-            default:
-
-                debugLog() << "ignored a" << message.type()
-                           << "message from slave" << slaveId;
-
-                break;
-
-
-            case Message::Type::SlaveBeacon:
-
-                break;
-
-
-            case Message::Type::JobFinished:
-
-                JobFinishedMessage message(buffer, n);
-
-                if (!message.ok()) {
-                    debugWarn() << "received a corrupt JobFinishedMessage from"
-                                << "slave" << slaveId;
-
-                    return;
-                }
-
-                auto jobId = message.jobId();
-
-                if (mJobs.find(jobId) == mJobs.end()) {
-                    debugWarn() << "received a JobFinishedMessage on a"
-                                << "stale job" << jobId;
-
-                    return;
-                }
-
-                debugInfo() << "slave" << slaveId << "has finished job"
-                            << jobId;
-
-                mJobs[jobId]->finished(slave);
-
-                break;
-
-
         }
     }
 
+    slave->updateHeartbeat();
+
+    switch (message.type()) {
+
+
+    default:
+
+        debugLog() << "ignored a" << message.type()
+            << "message from slave" << slaveId;
+
+        break;
+
+
+    case Message::Type::SlaveBeacon:
+
+        break;
+
+
+    case Message::Type::JobFinished:
+
+        JobFinishedMessage message(buffer, n);
+
+        if (!message.ok()) {
+            debugWarn() << "received a corrupt JobFinishedMessage from"
+                << "slave" << slaveId;
+
+            return;
+        }
+
+        auto jobId = message.jobId();
+
+        if (mJobs.find(jobId) == mJobs.end()) {
+            debugWarn() << "received a JobFinishedMessage on a"
+                << "stale job" << jobId;
+
+            return;
+        }
+
+        debugInfo() << "slave" << slaveId << "has finished job"
+            << jobId;
+
+        mJobs[jobId]->finished(slave);
+
+        break;
+
+
+    }
 }
 
 
