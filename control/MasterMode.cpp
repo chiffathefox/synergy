@@ -111,7 +111,7 @@ void Synergy::MasterMode::addSlave(Slave *slave)
                 << slave->addr().toString().c_str();
 
     mSlaves[slave->id()] = slave;
-    mLed.setTimeHigh(LedHighQuant * (1 + mSlaves.size()));
+    mLed.setTimeHigh(LedHighQuant * mSlaves.size());
 }
 
 
@@ -129,7 +129,7 @@ void Synergy::MasterMode::updateJobsHeartbeats()
 
 Synergy::MasterMode::MasterMode()
     : mRunning(false),
-    mLed(LED_BUILTIN, LedHighQuant, 500)
+    mLed(LED_BUILTIN, 0, 500)
 {
 
 }

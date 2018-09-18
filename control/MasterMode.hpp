@@ -20,7 +20,7 @@ namespace Synergy
 class Synergy::MasterMode : public Mode
 {
 
-    static const unsigned int LedHighQuant = 30;
+    static const unsigned int LedHighQuant = 50;
 
 
     WiFiUDP mUdp;
