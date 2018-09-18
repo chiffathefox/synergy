@@ -2,7 +2,7 @@
 #pragma once
 
 
-#include <vector>
+#include <map>
 
 #include "Job.hpp"
 #include "NewJobMessage.hpp"
@@ -17,8 +17,11 @@ namespace Synergy
 class Synergy::BroadcastJob : public Job
 {
 
-    NewJobMessage mMessage;
-    std::vector<Slave *> mSlaves;
+    JobMessage *mMessage;
+    std::map<Slave::id_t, Slave *> mSlaves;
+
+
+    void propagate();
 
 
 public:

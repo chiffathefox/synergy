@@ -158,9 +158,15 @@ void Synergy::MasterMode::emitJob(Job *job)
 
 void Synergy::MasterMode::jobFinished(Job *job)
 {
-    Serial.print("UARTjbEnd\n");
+    auto it = mJobs.find(job->id());
 
-    delete job;
+    if (it == mJobs.end()) {
+        Debugf("jobsfinished on anu known job");
+    } else {
+        Serial.print("UARTjbEnd\n");
+        mJobs.erase(it);
+        delete job;
+    }
 }
 
 

@@ -1,12 +1,40 @@
 
+#include "Debug.hpp"
 #include "BroadcastJob.hpp"
+
+
+void Synergy::BroadcastJob::propagate()
+{
+    if (mSlaves.empty()) {
+        master()->jobFinished(this);
+
+        /* No class fields may be accessed past this point! */
+
+        return;
+    }
+
+    NewJobMessage message;
+
+    mMessage = &message;
+    message.setJobId(id());
+    message.setTask(task(), taskLength());
+
+    for (auto const &it : mSlaves) {
+        setSlave(it.second);
+        master()->emitJob(this);
+    }
+
+    setSlave(nullptr);
+    mMessage = nullptr;
+}
 
 
 Synergy::BroadcastJob::BroadcastJob(MasterMode *master, const char *task,
         uint8_t taskLength)
-    : Job(master, task, taskLength)
+    : Job(master, task, taskLength),
+    mMessage(nullptr)
 {
-    mMessage.setTask(task, taskLength);
+
 }
 
 
@@ -14,15 +42,25 @@ void Synergy::BroadcastJob::updateHeartbeat()
 {
     Job::updateHeartbeat();
 
-    for (auto slave : mSlaves) {
-        setSlave(slave);
-        mMessage.setJobId(id());
-        mMessage.setTask(task(), taskLength());
-        master()->emitJob(this);
+    if (finishOnSlavesDeath()) {
+        for (auto it = mSlaves.begin(); it != mSlaves.end(); ) {
+            if (!it->second->alive()) {
+                mSlaves.erase(it);
+            } else {
+                it++;
+            }
+        }
     }
 
-    setSlave(nullptr);
-    mMessage.setJobId(0);
+    auto end = mSlaves.end();
+
+    for (auto const &it : master()->slaves()) {
+        if (mSlaves.find(it.first) == end && it.second->alive()) {
+            mSlaves[it.first] = it.second;
+        }
+    }
+
+    propagate();
 }
 
 
@@ -32,38 +70,43 @@ void Synergy::BroadcastJob::emit()
         return;
     }
 
+    Job::emit();
+
     for (auto const &it : master()->slaves()) {
         auto slave = it.second;
 
         if (slave->alive()) {
-            mSlaves.push_back(slave);
+            mSlaves[slave->id()] = slave;
         }
     }
 
-    updateHeartbeat();
+    propagate();
 }
 
 
 Synergy::JobMessage Synergy::BroadcastJob::message() const
 {
-    return mMessage;
+    return *mMessage;
 }
 
 
 void Synergy::BroadcastJob::finished(Slave *slave)
 {
-    for (auto it = mSlaves.begin(); it != mSlaves.end(); it++) {
-        if (*it == slave) {
-            mSlaves.erase(it);
+    auto it = mSlaves.find(slave->id());
 
-            if (mSlaves.empty()) {
-                master()->jobFinished(this);
+    if (it == mSlaves.end()) {
+        Debugf("Somebody called Synergy::BroadcastJob::finished with an "
+                "unknown to us Slave (%u)\n", slave->id());
 
-                /* No class fields may be accessed past this point! */
+        return;
+    }
 
-            }
+    mSlaves.erase(it);
 
-            break;
-        }
+    if (mSlaves.empty()) {
+        master()->jobFinished(this);
+
+        /* No class fields may be accessed past this point! */
+
     }
 }

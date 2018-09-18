@@ -27,3 +27,9 @@ void Synergy::Job::updateHeartbeat()
 {
     mHeartbeat = millis();
 }
+
+
+void Synergy::Job::emit()
+{
+    Job::updateHeartbeat();
+}

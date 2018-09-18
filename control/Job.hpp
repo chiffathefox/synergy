@@ -24,6 +24,11 @@ class Synergy::Job
     Slave *mSlave;
     unsigned long mHeartbeat;
 
+    unsigned mFinishOnSlavesDeath;
+
+
+    friend class MasterMode;
+
 
 public:
 
@@ -53,9 +58,8 @@ public:
     virtual ~Job();
 
     virtual void updateHeartbeat();
+    virtual void emit();
 
-    virtual void emit() = 0;
-    virtual JobMessage message() const = 0;
     virtual void finished(Slave *slave) = 0;
 
 
@@ -99,6 +103,23 @@ public:
     {
         return mHeartbeat;
     }
+
+
+    inline bool finishOnSlavesDeath() const
+    {
+        return mFinishOnSlavesDeath;
+    }
+
+
+    inline void setFinishOnSlavesDeath(bool finishOnSlavesDeath)
+    {
+        mFinishOnSlavesDeath = finishOnSlavesDeath;
+    }
+
+
+protected:
+
+    virtual JobMessage message() const = 0;
 
 
 private:
