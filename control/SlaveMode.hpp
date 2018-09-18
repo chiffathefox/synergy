@@ -34,7 +34,7 @@ class Synergy::SlaveMode : public Mode
 
 public:
 
-    static const uint16_t Port;
+    static const uint16_t Port = 1001;
 
 
     SlaveMode();

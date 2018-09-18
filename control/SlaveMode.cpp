@@ -11,9 +11,6 @@
 #include "SlaveMode.hpp"
 
 
-const uint16_t Synergy::SlaveMode::Port = 1001;
-
-
 IPAddress Synergy::SlaveMode::masterAddr() const
 {
     

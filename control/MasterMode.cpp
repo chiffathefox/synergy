@@ -9,9 +9,6 @@
 #include "MasterMode.hpp"
 
 
-const uint16_t Synergy::MasterMode::Port = 1001;
-
-
 Synergy::MasterMode::MasterMode()
     : mRunning(false),
     mLed(LED_BUILTIN, 50, 500)

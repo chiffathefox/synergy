@@ -29,7 +29,7 @@ class Synergy::MasterMode : public Mode
 
 public:
 
-    static const uint16_t Port;
+    static const uint16_t Port = 1001;
 
 
     MasterMode();
