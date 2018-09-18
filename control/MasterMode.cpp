@@ -148,7 +148,7 @@ Synergy::MasterMode::slaves() const
 }
 
 
-void Synergy::MasterMode::emitJob(Job *job)
+void Synergy::MasterMode::sendJob(Job *job)
 {
     mJobs[job->id()] = job;
 

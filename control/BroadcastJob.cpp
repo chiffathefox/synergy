@@ -21,7 +21,7 @@ void Synergy::BroadcastJob::propagate()
 
     for (auto const &it : mSlaves) {
         setSlave(it.second);
-        master()->emitJob(this);
+        master()->sendJob(this);
     }
 
     setSlave(nullptr);
