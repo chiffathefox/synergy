@@ -1,22 +1,24 @@
 
+#include <algorithm>
+
 #include "Message.hpp"
 
 
-Synergy::Message::Message(char *buffer, int length, Type type)
+Synergy::Message::Message(char *buffer, size_t length, Type type)
     : mOk(false)
 {
-    if (length == -1) {
-        mMessage = reinterpret_cast<MessageStruct *>(mBuffer);
-
+    if (buffer == nullptr) {
         setType(type);
         setBufferLength(0);
-    }
 
-    if (length < 2) {
         return;
     }
 
-    mMessage = reinterpret_cast<MessageStruct *>(buffer);
+    if (length < offsetof(MessageStruct, buffer) || length > maxRawLength()) {
+        return;
+    }
+
+    std::copy(buffer, buffer + length, reinterpret_cast<char *>(&mMessage));
     setOk(this->type() == type || type == Type::None);
 }
 

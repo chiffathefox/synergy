@@ -14,7 +14,7 @@ class Synergy::NewJobMessage : public JobMessage
 {
 
 
-    struct MessageStruct
+    struct synergy_align MessageStruct
     {
         uint8_t taskLength;
         char task[Synergy::Job::MaxTaskLength];
@@ -26,7 +26,7 @@ class Synergy::NewJobMessage : public JobMessage
 
 public:
 
-    NewJobMessage(char *buffer = nullptr, int length = -1);
+    NewJobMessage(char *buffer = nullptr, size_t length = -1);
 
 
     void setTask(const char *task, uint8_t taskLength);

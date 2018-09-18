@@ -2,10 +2,10 @@
 #include "SlaveBeaconMessage.hpp"
 
 
-Synergy::SlaveBeaconMessage::SlaveBeaconMessage(char *message, int length)
+Synergy::SlaveBeaconMessage::SlaveBeaconMessage(char *message, size_t length)
     : Message(message, length, Message::Type::SlaveBeacon)
 {
-    if (length == -1) {
+    if (message == nullptr) {
         setBufferLength(0);
     }
 }

@@ -15,7 +15,7 @@ namespace Synergy
 class Synergy::JobMessage : public Message
 {
 
-    struct MessageStruct
+    struct synergy_align MessageStruct
     {
         Job::id_t jobId;
     };
@@ -26,7 +26,7 @@ class Synergy::JobMessage : public Message
 
 public:
 
-    explicit JobMessage(char *buffer, int length, Type type);
+    explicit JobMessage(char *buffer, size_t length, Type type);
 
 
     inline Job::id_t jobId() const

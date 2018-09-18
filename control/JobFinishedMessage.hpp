@@ -16,6 +16,6 @@ class Synergy::JobFinishedMessage : public JobMessage
 
 public:
 
-    JobFinishedMessage(char *buffer = nullptr, int length = -1);
+    JobFinishedMessage(char *buffer = nullptr, size_t length = -1);
 
 };

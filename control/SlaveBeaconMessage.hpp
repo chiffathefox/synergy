@@ -17,6 +17,6 @@ class Synergy::SlaveBeaconMessage : public Message
 
 public:
 
-    SlaveBeaconMessage(char *buffer = nullptr, int length = -1);
+    SlaveBeaconMessage(char *buffer = nullptr, size_t length = -1);
 
 };

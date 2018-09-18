@@ -5,6 +5,8 @@
 #include <cstddef>
 #include <cstdint>
 
+#include "DataProc.hpp"
+
 
 namespace Synergy
 {
@@ -31,7 +33,7 @@ public:
     };
 
 
-    Message(char *buffer = nullptr, int length = -1,
+    Message(char *buffer = nullptr, size_t length = -1,
             Type type = Type::None);
 
 
@@ -43,7 +45,7 @@ public:
 
     inline Type type() const
     {
-        return mMessage->type;
+        return mMessage.type;
     }
 
 
@@ -52,9 +54,9 @@ protected:
     virtual uint8_t offset() const;
 
 
-    inline char *buffer() const
+    inline char *buffer()
     {
-        return mMessage->buffer;
+        return mMessage.buffer;
     }
 
 
@@ -78,52 +80,51 @@ protected:
 
     inline void setType(Type type)
     {
-        mMessage->type = type;
+        mMessage.type = type;
     }
 
 
     inline uint8_t bufferLength() const
     {
-        return mMessage->bufferLength;
+        return mMessage.bufferLength;
     }
 
 
     inline void setBufferLength(uint8_t bufferLength)
     {
-        mMessage->bufferLength = bufferLength;
+        mMessage.bufferLength = bufferLength;
     }
 
 
 private:
 
-    struct MessageStruct
+    struct synergy_align MessageStruct
     {
         Type type;
         uint8_t bufferLength;
-        char buffer[64];
+        synergy_align char buffer[64];
     };
 
 
-    MessageStruct *mMessage;
-    char mBuffer[sizeof (MessageStruct)];
+    MessageStruct mMessage;
 
 
 public:
 
 
-    static inline int maxRawLength()
+    static inline size_t maxRawLength()
     {
         return sizeof (MessageStruct);
     }
 
 
-    inline char *raw() const
+    inline const char *raw() const
     {
-        return reinterpret_cast<char *>(mMessage);
+        return reinterpret_cast<const char *>(&mMessage);
     }
 
     
-    inline int rawLength() const
+    inline size_t rawLength() const
     {
         return offsetof(MessageStruct, buffer) + bufferLength();
     }

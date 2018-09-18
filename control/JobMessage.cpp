@@ -3,14 +3,14 @@
 #include "JobMessage.hpp"
 
 
-Synergy::JobMessage::JobMessage(char *buffer, int length, Type type)
+Synergy::JobMessage::JobMessage(char *buffer, size_t length, Type type)
     : Message(buffer, length, type)
 {
     mMessage = reinterpret_cast<MessageStruct *>(
             this->buffer() + Message::offset());
 
 
-    if (length == -1) {
+    if (buffer == nullptr) {
         setBufferLength(sizeof (MessageStruct));
         setJobId(0);
 
