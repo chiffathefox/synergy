@@ -143,7 +143,7 @@ void Synergy::SlaveMode::loop()
 
         default:
 
-            Debugf("Ignored a %u message from %s", message.type(),
+            Debugf("Ignored a %u message from %s\n", message.type(),
                     addrStr.c_str());
 
             break;
