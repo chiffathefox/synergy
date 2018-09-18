@@ -11,6 +11,7 @@ Synergy::Job::Job(MasterMode *master, const char *task, uint8_t taskLength)
     mTaskLength(taskLength),
     mSlave(nullptr),
     mHeartbeat(0),
+    mFinishOnSlavesDeath(false),
     mId(getId())
 {
 
