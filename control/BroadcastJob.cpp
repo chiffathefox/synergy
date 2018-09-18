@@ -45,7 +45,7 @@ void Synergy::BroadcastJob::updateHeartbeat()
     if (finishOnSlavesDeath()) {
         for (auto it = mSlaves.begin(); it != mSlaves.end(); ) {
             if (!it->second->alive()) {
-                mSlaves.erase(it);
+                it = mSlaves.erase(it);
             } else {
                 it++;
             }
