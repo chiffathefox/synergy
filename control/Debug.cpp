@@ -30,7 +30,7 @@ void Debug::assertPanic(const char *file, int line, const char *message)
 
 const char *Debug::stripModifiers(const char *name)
 {
-    const char *lastSpace = nullptr;
+    const char *lastSpace = name;
 
     for (; *name; name++) {
         switch (*name) {
