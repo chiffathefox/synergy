@@ -40,6 +40,7 @@ public:
      */
 
     static const uint8_t MaxTaskLength = 47;
+    static const unsigned long HeartbeatPeriod = 50;
 
 
     inline static id_t getId()

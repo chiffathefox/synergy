@@ -27,6 +27,11 @@ class Synergy::MasterMode : public Mode
     RoughSquareWave mLed;
 
 
+    void parseUdp();
+    void addSlave(Slave *slave);
+    void updateJobsHeartbeats();
+
+
 public:
 
     static const uint16_t Port = 1001;

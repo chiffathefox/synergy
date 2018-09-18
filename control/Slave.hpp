@@ -24,8 +24,8 @@ public:
     typedef uint8_t id_t;
 
 
-    static unsigned long HeartbeatTimeout = 1000;
-    static unsigned long HeartbeatPeriod = 50;
+    static const unsigned long HeartbeatTimeout = 1000;
+    static const unsigned long HeartbeatPeriod = 50;
 
 
     explicit Slave(const IPAddress &addr);

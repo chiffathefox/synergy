@@ -9,9 +9,123 @@
 #include "MasterMode.hpp"
 
 
+void Synergy::MasterMode::parseUdp()
+{
+    int n = mUdp.parsePacket();
+
+    if (n) {
+        IPAddress addr = mUdp.remoteIP();
+        Slave::id_t slaveId = Slave(addr).id();
+
+        if ((static_cast<uint32_t>(addr) ^ WiFi.softAPIP()) & 0x00FFFFFF) {
+
+            Debugf("Ignored a packet from an IP from a foreign " 
+                    "subnet (%s)\n", addr.toString().c_str());
+
+            return;
+        }
+
+        char buffer[Message::maxRawLength()];
+
+        n = mUdp.read(buffer, sizeof (buffer));
+
+        Message message(buffer, n, Message::Type::None);
+
+        if (!message.ok()) {
+            Debugf("Received a corrupt message from #%u\n", slaveId);
+
+            return;
+        }
+
+        Slave *slave = mSlaves[slaveId];
+
+        if (slave == nullptr) {
+            if (message.type() == Message::Type::SlaveBeacon) {
+                slave = new Slave(addr);
+
+                addSlave(slave);
+            } else {
+                Debugf("Received a valid message from an unknown "
+                        "slave #%u\n", slaveId);
+
+                return;
+            }
+        }
+
+        slave->updateHeartbeat();
+
+        switch (message.type()) {
+
+
+            default:
+
+                Debugf("Ignored a %u message from #%u\n",
+                        message.type(), slaveId);
+
+                break;
+
+
+            case Message::Type::SlaveBeacon:
+
+                break;
+
+
+            case Message::Type::JobFinished:
+
+                JobFinishedMessage message(buffer, n);
+
+                if (!message.ok()) {
+                    Debugf("Received a corrupt JobFinishedMessage from #%u\n",
+                            slaveId);
+
+                    return;
+                }
+
+                auto jobId = message.jobId();
+
+                if (mJobs.find(jobId) == mJobs.end()) {
+                    Debugf("Received a stale job %u\n", jobId);
+
+                    return;
+                }
+
+                mJobs[jobId]->finished(slave);
+
+                Debugf("#%u has finished job #%u\n", slaveId, jobId);
+
+                break;
+
+
+        }
+    }
+
+}
+
+
+void Synergy::MasterMode::addSlave(Slave *slave)
+{
+    mSlaves[slave->id()] = slave;
+    mLed.setTimeHigh(10 * mSlaves.size());
+
+    Debugf("Added a new slave #%u\n", slave->id());
+}
+
+
+void Synergy::MasterMode::updateJobsHeartbeats()
+{
+    for (auto const &it : mJobs) {
+        auto job = it.second;
+
+        if (millis() - job->heartbeat() >= Job::HeartbeatPeriod) {
+            job->updateHeartbeat();
+        }
+    }
+}
+
+
 Synergy::MasterMode::MasterMode()
     : mRunning(false),
-    mLed(LED_BUILTIN, 50, 500)
+    mLed(LED_BUILTIN, 10, 500)
 {
 }
 
@@ -94,94 +208,7 @@ void Synergy::MasterMode::loop()
 
     if (mRunning) {
         mLed.loop();
-
-        int n = mUdp.parsePacket();
-
-        if (n) {
-            IPAddress addr = mUdp.remoteIP();
-            Slave::id_t slaveId = Slave(addr).id();
-
-            if ((static_cast<uint32_t>(addr) ^ WiFi.softAPIP()) & 0x00FFFFFF) {
-                
-                Debugf("Ignored a packet from an IP from a foreign " 
-                        "subnet (%s)\n", addr.toString().c_str());
-
-                return;
-            }
-
-            char buffer[Message::maxRawLength()];
-
-            n = mUdp.read(buffer, sizeof (buffer));
-
-            Message message(buffer, n, Message::Type::None);
-
-            if (!message.ok()) {
-                Debugf("Received a corrupt message from #%u\n", slaveId);
-
-                return;
-            }
-
-            Slave *slave = mSlaves[slaveId];
-
-            if (slave == nullptr) {
-                if (message.type() == Message::Type::SlaveBeacon) {
-                    slave = new Slave(addr);
-                    mSlaves[slaveId] = slave;
-
-                    Debugf("Added a new slave #%u\n", slaveId);
-                } else {
-                    Debugf("Received a valid message from an unknown "
-                            "slave #%u\n", slaveId);
-
-                    return;
-                }
-            }
-
-            slave->updateHeartbeat();
-
-            switch (message.type()) {
-
-
-            default:
-
-                Debugf("Ignored a %u message from #%u\n",
-                        message.type(), slaveId);
-
-                break;
-
-
-            case Message::Type::SlaveBeacon:
-
-                break;
-
-
-            case Message::Type::JobFinished:
-
-                JobFinishedMessage message(buffer, n);
-
-                if (!message.ok()) {
-                    Debugf("Received a corrupt JobFinishedMessage from #%u\n",
-                            slaveId);
-
-                    return;
-                }
-
-                auto jobId = message.jobId();
-
-                if (mJobs.find(jobId) == mJobs.end()) {
-                    Debugf("Received a stale job %u\n", jobId);
-
-                    return;
-                }
-
-                mJobs[jobId]->finished(slave);
-
-                Debugf("#%u has finished job #%u\n", slaveId, jobId);
-
-                break;
-
-
-            }
-        }
+        parseUdp();
+        updateJobsHeartbeats();
     }
 }
