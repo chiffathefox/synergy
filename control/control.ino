@@ -222,7 +222,7 @@ static Status cmdBroadcast()
             auto job = new Synergy::BroadcastJob(&master,
                     cmdBuffer.c_str(), cmdBuffer.length());
 
-            job->emit();
+            master.registerJob(job);
             state = CmdBroadcastFirstSpace;
 
             debugLog() << "broadcasted a new job" << job->id();

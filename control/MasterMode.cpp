@@ -150,14 +150,27 @@ Synergy::MasterMode::slaves() const
 
 void Synergy::MasterMode::sendJob(Job *job)
 {
-    mJobs[job->id()] = job;
-
     auto slave = job->slave();
     auto message = job->message();
 
     mUdp.beginPacket(slave->addr(), SlaveMode::Port);
     mUdp.write(message.raw(), message.rawLength());
     mUdp.endPacket();
+}
+
+
+void Synergy::MasterMode::registerJob(Job *job)
+{
+    if (mJobs.find(job->id()) == mJobs.end()) {
+        mJobs[job->id()] = job;
+        job->emit();
+    } else {
+        debugEmerg() << "tried to register an already registereg job"
+                     << job->id() << "with task" << job->task()
+                     << (job == mJobs[job->id()] ?
+                         "which is the same as the one alredy registered" :
+                         "which is NOT the same as the one already registered");
+    }
 }
 
 

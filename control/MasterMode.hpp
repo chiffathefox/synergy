@@ -46,6 +46,7 @@ public:
     std::map<Slave::id_t, Slave *> slaves() const;
 
     void sendJob(Job *job);
+    void registerJob(Job *job);
     void jobFinished(Job *job);
 
     virtual void start(const char *ssid, const char *pwd) override;
