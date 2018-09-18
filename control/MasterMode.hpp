@@ -20,6 +20,9 @@ namespace Synergy
 class Synergy::MasterMode : public Mode
 {
 
+    static const unsigned int LedHighQuant = 30;
+
+
     WiFiUDP mUdp;
     bool mRunning;
     std::map<Slave::id_t, Slave *> mSlaves;

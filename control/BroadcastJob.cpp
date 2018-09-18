@@ -95,8 +95,7 @@ void Synergy::BroadcastJob::finished(Slave *slave)
     auto it = mSlaves.find(slave->id());
 
     if (it == mSlaves.end()) {
-        Debugf("Somebody called Synergy::BroadcastJob::finished with an "
-                "unknown to us Slave (%u)\n", slave->id());
+        debugEmerg() << "called with an unknown to us slave" << slave->id();
 
         return;
     }

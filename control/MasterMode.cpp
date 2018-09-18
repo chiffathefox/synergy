@@ -19,8 +19,8 @@ void Synergy::MasterMode::parseUdp()
 
         if ((static_cast<uint32_t>(addr) ^ WiFi.softAPIP()) & 0x00FFFFFF) {
 
-            Debugf("Ignored a packet from an IP from a foreign " 
-                    "subnet (%s)\n", addr.toString().c_str());
+            debugLog() << "ignored a packet from an IP from a foreign subnet"
+                       << addr.toString().c_str();
 
             return;
         }
@@ -32,7 +32,7 @@ void Synergy::MasterMode::parseUdp()
         Message message(buffer, n, Message::Type::None);
 
         if (!message.ok()) {
-            Debugf("Received a corrupt message from #%u\n", slaveId);
+            debugWarn() << "received a corrupt message from slave" << slaveId;
 
             return;
         }
@@ -45,8 +45,8 @@ void Synergy::MasterMode::parseUdp()
 
                 addSlave(slave);
             } else {
-                Debugf("Received a valid message from an unknown "
-                        "slave #%u\n", slaveId);
+                debugWarn() << "received a vailid message from an unknown"
+                            << "slave" << slaveId;
 
                 return;
             }
@@ -59,8 +59,8 @@ void Synergy::MasterMode::parseUdp()
 
             default:
 
-                Debugf("Ignored a %u message from #%u\n",
-                        message.type(), slaveId);
+                debugLog() << "ignored a" << message.type()
+                           << "message from slave" << slaveId;
 
                 break;
 
@@ -75,8 +75,8 @@ void Synergy::MasterMode::parseUdp()
                 JobFinishedMessage message(buffer, n);
 
                 if (!message.ok()) {
-                    Debugf("Received a corrupt JobFinishedMessage from #%u\n",
-                            slaveId);
+                    debugWarn() << "received a corrupt JobFinishedMessage from"
+                                << "slave" << slaveId;
 
                     return;
                 }
@@ -84,14 +84,16 @@ void Synergy::MasterMode::parseUdp()
                 auto jobId = message.jobId();
 
                 if (mJobs.find(jobId) == mJobs.end()) {
-                    Debugf("Received a stale job %u\n", jobId);
+                    debugWarn() << "received a JobFinishedMessage on a"
+                                << "stale job" << jobId;
 
                     return;
                 }
 
-                mJobs[jobId]->finished(slave);
+                debugInfo() << "slave" << slaveId << "has finished job"
+                            << jobId;
 
-                Debugf("#%u has finished job #%u\n", slaveId, jobId);
+                mJobs[jobId]->finished(slave);
 
                 break;
 
@@ -104,10 +106,11 @@ void Synergy::MasterMode::parseUdp()
 
 void Synergy::MasterMode::addSlave(Slave *slave)
 {
-    mSlaves[slave->id()] = slave;
-    mLed.setTimeHigh(10 * mSlaves.size());
+    debugInfo() << "add slave" << slave->id() << "@"
+                << slave->addr().toString().c_str();
 
-    Debugf("Added a new slave #%u\n", slave->id());
+    mSlaves[slave->id()] = slave;
+    mLed.setTimeHigh(LedHighQuant * (1 + mSlaves.size()));
 }
 
 
@@ -125,8 +128,9 @@ void Synergy::MasterMode::updateJobsHeartbeats()
 
 Synergy::MasterMode::MasterMode()
     : mRunning(false),
-    mLed(LED_BUILTIN, 10, 500)
+    mLed(LED_BUILTIN, LedHighQuant, 500)
 {
+
 }
 
 
@@ -161,9 +165,11 @@ void Synergy::MasterMode::jobFinished(Job *job)
     auto it = mJobs.find(job->id());
 
     if (it == mJobs.end()) {
-        Debugf("jobsfinished on anu known job");
+        debugEmerg() << "called on an unknown to us job" << job->id();
     } else {
         Serial.print("UARTjbEnd\n");
+        debugInfo() << "job" << job->id() << "was finished";
+
         mJobs.erase(it);
         delete job;
     }
@@ -186,7 +192,7 @@ void Synergy::MasterMode::start(const char *ssid, const char *pwd)
 
     mRunning = true;
 
-    Debugf("brough up %s %s\n", ssid, pwd);
+    debugInfo() << "entered master mode and brought up AP" << ssid << pwd;
 }
 
 

@@ -62,7 +62,7 @@ void Synergy::SlaveMode::start(const char *ssid, const char *pwd)
 
     delay(100);
 
-    Debugf("Slaved to %s %s\n", ssid, pwd);
+    debugInfo() << "entered slave mode on AP" << ssid << pwd;
 
     mRunning = true;
     mLastJobId = 0;
@@ -130,7 +130,7 @@ void Synergy::SlaveMode::loop()
         Message message(buffer, n, Message::Type::None);
 
         if (!message.ok()) {
-            Debugf("Received a corrupt message from %s\n", addrStr.c_str());
+            debugWarn() << "received a corrupt message from" << addrStr.c_str();
 
             return;
         }
@@ -140,8 +140,8 @@ void Synergy::SlaveMode::loop()
 
         default:
 
-            Debugf("Ignored a %u message from %s\n", message.type(),
-                    addrStr.c_str());
+            debugLog() << "ignored a" << message.type() << "message from"
+                       << addrStr.c_str();
 
             break;
 
@@ -151,8 +151,10 @@ void Synergy::SlaveMode::loop()
             NewJobMessage message(buffer, n);
 
             if (!message.ok()) {
-                Debugf("Received a corrupt NewJobMessage from %s\n",
-                        addrStr.c_str());
+                debugWarn() << "received a corrupt NewJobMessage from"
+                            << addrStr.c_str();
+
+                return;
             }
 
             auto jobId = message.jobId();
@@ -162,9 +164,9 @@ void Synergy::SlaveMode::loop()
             if (jobId < mLastJobId) {
                 sendJobFinished(jobId);
 
-                Debugf("Received a stale job #%u (%s) from %s. "
-                        "Last job was %u\n", jobId, task, addrStr.c_str(),
-                        mLastJobId);
+                debugWarn() << "received a stale job" << jobId << "with task"
+                            << task << "from" << addrStr.c_str();
+                debugWarn() << "Last job had an id" << mLastJobId;
 
                 return;
             }
@@ -183,8 +185,8 @@ void Synergy::SlaveMode::loop()
                  * XXX: is it better to stack them?
                  */
 
-                Debugf("Dropped a job #%u (%s) from %s.\n", jobId, task,
-                        addrStr.c_str());
+                debugWarn() << "dropped a new job" << jobId << "with task"
+                            << task << "from" << addrStr.c_str();
 
                 sendJobFinished(jobId);
 
@@ -193,8 +195,8 @@ void Synergy::SlaveMode::loop()
 
             setCurrentJob(jobId);
 
-            Debugf("Received a new job #%u (%s) from %s.\n",
-                    jobId, task, addrStr.c_str());
+            debugInfo() << "received a new job" << jobId << "with task"
+                        << task << "from" << addrStr.c_str();
 
             Serial.printf("UARTnwJob %s\n", task);
 

@@ -225,7 +225,7 @@ static Status cmdBroadcast()
             job->emit();
             state = CmdBroadcastFirstSpace;
 
-            Debugf("broadcasted a new job #%u\n", job->id());
+            debugLog() << "broadcasted a new job" << job->id();
 
             return STATUS_DONE;
 
@@ -251,8 +251,8 @@ static Status cmdJobFinished()
 
 static void updateStat(const char *key)
 {
-    Debugf("Update stat %s\n", key);
     stat[key]++;
+    debugWarn() << "update stat" << key;
 }
 
 
@@ -357,6 +357,18 @@ void setup()
     WiFi.mode(WIFI_STA);
 
     Serial.begin(115200);
+
+
+#if (DEBUG)
+
+
+    for (int i = 0; i < 3; i++) {
+        Serial.println("BOOTED UP WITH A `DEBUG` DEFINED");
+    }
+
+
+#endif
+
 
     handlers["start"] = &cmdStart;
     handlers["brdct"] = &cmdBroadcast;
