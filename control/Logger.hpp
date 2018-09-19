@@ -26,6 +26,7 @@ public:
     virtual Logger &operator<<(double value) = 0;
     virtual Logger &operator<<(bool value) = 0;
     virtual Logger &operator<<(const char *value) = 0;
+    virtual Logger &operator<<(const std::string &value) = 0;
 
 
 };

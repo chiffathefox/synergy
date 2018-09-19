@@ -116,3 +116,9 @@ Debug::Logger &Debug::SerialLogger::operator<<(const char *value)
 
     return *this;
 }
+
+
+Debug::Logger &Debug::SerialLogger::operator<<(const std::string &value)
+{
+    return *this << value.c_str();
+}

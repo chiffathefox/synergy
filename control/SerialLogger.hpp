@@ -44,6 +44,7 @@ public:
     virtual Logger &operator<<(double value) override;
     virtual Logger &operator<<(bool value) override;
     virtual Logger &operator<<(const char *value) override;
+    virtual Logger &operator<<(const std::string &value) override;
 
 
 };

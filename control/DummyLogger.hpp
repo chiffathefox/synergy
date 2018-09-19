@@ -71,4 +71,10 @@ public:
     }
 
 
+    inline virtual Logger &operator<<(const std::string &) override
+    {
+        return *this;
+    }
+
+
 };
