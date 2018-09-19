@@ -5,6 +5,7 @@
 #include "Message.hpp"
 #include "NewJobMessage.hpp"
 #include "JobFinishedMessage.hpp"
+#include "JobFinishedAcceptedMessage.hpp"
 #include "SlaveMode.hpp"
 #include "MasterMode.hpp"
 
@@ -90,6 +91,16 @@ void Synergy::MasterMode::parseUdp()
         }
 
         auto jobId = message.jobId();
+
+
+        JobFinishedAcceptedMessage acceptMessage;
+
+        acceptMessage.setJobId(jobId);
+
+        mUdp.beginPacket(addr, SlaveMode::Port);
+        mUdp.write(acceptMessage.raw(), acceptMessage.rawLength());
+        mUdp.endPacket();
+
 
         if (mJobs.find(jobId) == mJobs.end()) {
             debugWarn() << "received a JobFinishedMessage on a"

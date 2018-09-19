@@ -41,6 +41,8 @@ class Synergy::MasterMode : public Mode
 
     void uartSendJobFinished(Job *job);
 
+    void sendJobFinishedAccepted(Job::id_t jobId);
+
 
 public:
 

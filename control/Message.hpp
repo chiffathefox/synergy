@@ -29,7 +29,8 @@ public:
         SlaveBeacon,
         MasterBeacon,
         NewJob,
-        JobFinished
+        JobFinished,
+        JobFinishedAccepted
     };
 
 
