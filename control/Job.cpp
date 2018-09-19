@@ -1,4 +1,7 @@
 
+#include <sstream>
+
+#include "StringUtils.hpp"
 #include "Job.hpp"
 
 
@@ -33,4 +36,11 @@ void Synergy::Job::updateHeartbeat()
 void Synergy::Job::emit()
 {
     Job::updateHeartbeat();
+}
+
+
+std::string Synergy::Job::toString() const
+{
+    return std::string("Job #") + StringUtils::toString(id()) +
+        " (" + task() + ")";
 }

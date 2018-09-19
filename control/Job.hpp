@@ -3,6 +3,7 @@
 
 
 #include <cstdint>
+#include <string>
 
 #include "Slave.hpp"
 
@@ -59,6 +60,7 @@ public:
 
     virtual void updateHeartbeat();
     virtual void emit();
+    virtual std::string toString() const;
 
     virtual void finished(Slave *slave) = 0;
 

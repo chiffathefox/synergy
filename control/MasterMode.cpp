@@ -177,7 +177,7 @@ Synergy::MasterMode::deleteSlave(SlavesMap::iterator &it)
 void Synergy::MasterMode::uartSendJobFinished(Job *job)
 {
     Serial.print("UARTjbEnd\n");
-    debugInfo() << "job" << job->id() << "was finished";
+    debugInfo() << job->toString() << "was finished";
 }
 
 
@@ -216,8 +216,8 @@ void Synergy::MasterMode::sendJob(Job *job)
 void Synergy::MasterMode::registerJob(Job *job)
 {
     if (mJobs.size() >= MaxJobs) {
-        debugEmerg() << "reached jobs limit, dropping the new job"
-                     << job->id() << "with task" << job->task();
+        debugEmerg() << "reached jobs limit, dropping the new"
+                     << job->toString();
 
         uartSendJobFinished(job);
 
@@ -230,8 +230,8 @@ void Synergy::MasterMode::registerJob(Job *job)
         mJobs[job->id()] = job;
         job->emit();
     } else {
-        debugEmerg() << "tried to register an already registereg job"
-                     << job->id() << "with task" << job->task()
+        debugEmerg() << "tried to register an already registered"
+                     << job->toString()
                      << (job == mJobs[job->id()] ?
                          "which is the same as the one alredy registered" :
                          "which is NOT the same as the one already registered");
@@ -244,7 +244,7 @@ void Synergy::MasterMode::jobFinished(Job *job)
     auto it = mJobs.find(job->id());
 
     if (it == mJobs.end()) {
-        debugEmerg() << "called on an unknown to us job" << job->id();
+        debugEmerg() << "called on an unknown to us" << job->toString();
     } else {
         uartSendJobFinished(job);
         mJobs.erase(it);
