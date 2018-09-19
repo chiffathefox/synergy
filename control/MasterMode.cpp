@@ -40,19 +40,24 @@ void Synergy::MasterMode::parseUdp()
         return;
     }
 
-    Slave *slave = mSlaves[slaveId];
+    Slave *slave;
+    auto it = mSlaves.find(slaveId);
 
-    if (slave == nullptr) {
+    if (it == mSlaves.end()) {
         if (message.type() == Message::Type::SlaveBeacon) {
-            slave = new Slave(addr);
+            slave = createSlave(addr);
 
-            addSlave(slave);
+            if (slave == nullptr) {
+                return;
+            }
         } else {
             debugWarn() << "received a vailid message from an unknown"
                 << "slave" << slaveId;
 
             return;
         }
+    } else {
+        slave = it->second;
     }
 
     slave->updateHeartbeat();
@@ -105,16 +110,6 @@ void Synergy::MasterMode::parseUdp()
 }
 
 
-void Synergy::MasterMode::addSlave(Slave *slave)
-{
-    debugInfo() << "add slave" << slave->id() << "@"
-                << slave->addr().toString().c_str();
-
-    mSlaves[slave->id()] = slave;
-    mLed.setTimeHigh(LedHighQuant * mSlaves.size());
-}
-
-
 void Synergy::MasterMode::updateJobsHeartbeats()
 {
     for (auto const &it : mJobs) {
@@ -124,6 +119,65 @@ void Synergy::MasterMode::updateJobsHeartbeats()
             job->updateHeartbeat();
         }
     }
+}
+
+
+Synergy::Slave *Synergy::MasterMode::createSlave(const IPAddress &addr)
+{
+    if (mSlaves.size() >= MaxSlaves) {
+        debugWarn() << "reached slaves limit. ("
+                    << mSlaves.size() << "/" << MaxSlaves
+                    << "). Attempting to delete some ...";
+
+        for (auto it = mSlaves.begin(); it != mSlaves.end(); it++) {
+            if (!it->second->alive()) {
+                deleteSlave(it);
+                it = mSlaves.erase(it);
+
+                break;
+            }
+        }
+
+        if (mSlaves.size() >= MaxSlaves) {
+            debugEmerg() << "not enough slaves were removed, the new slave"
+                         << "is ignored";
+
+            return nullptr;
+        }
+    }
+
+    auto slave = new Slave(addr);
+
+    debugInfo() << "add slave" << slave->id() << "@"
+                << slave->addr().toString().c_str();
+
+    mSlaves[slave->id()] = slave;
+    mLed.setTimeHigh(LedHighQuant * mSlaves.size());
+
+    return slave;
+}
+
+
+Synergy::MasterMode::SlavesMap::iterator
+Synergy::MasterMode::deleteSlave(SlavesMap::iterator &it)
+{
+    auto slave = it->second;
+
+    debugInfo() << "delete slave" << slave->id() << "@"
+                << slave->addr().toString().c_str();
+
+    mLed.setTimeHigh(LedHighQuant * (mSlaves.size() - 1));
+
+    delete slave;
+
+    return mSlaves.erase(it);
+}
+
+
+void Synergy::MasterMode::uartSendJobFinished(Job *job)
+{
+    Serial.print("UARTjbEnd\n");
+    debugInfo() << "job" << job->id() << "was finished";
 }
 
 
@@ -161,6 +215,17 @@ void Synergy::MasterMode::sendJob(Job *job)
 
 void Synergy::MasterMode::registerJob(Job *job)
 {
+    if (mJobs.size() >= MaxJobs) {
+        debugEmerg() << "reached jobs limit, dropping the new job"
+                     << job->id() << "with task" << job->task();
+
+        uartSendJobFinished(job);
+
+        delete job;
+
+        return;
+    }
+
     if (mJobs.find(job->id()) == mJobs.end()) {
         mJobs[job->id()] = job;
         job->emit();
@@ -181,9 +246,7 @@ void Synergy::MasterMode::jobFinished(Job *job)
     if (it == mJobs.end()) {
         debugEmerg() << "called on an unknown to us job" << job->id();
     } else {
-        Serial.print("UARTjbEnd\n");
-        debugInfo() << "job" << job->id() << "was finished";
-
+        uartSendJobFinished(job);
         mJobs.erase(it);
         delete job;
     }
@@ -225,8 +288,6 @@ void Synergy::MasterMode::stop() {
 
 void Synergy::MasterMode::loop()
 {
-
-    /* TODO: iterate over jobs in order to implement heartbeat. */
     /* TODO: send a response once a job finishes */
     /* TODO: repeat JobFinishedMessage on slaves */
     /* TODO: job timeout */

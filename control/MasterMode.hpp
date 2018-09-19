@@ -20,24 +20,33 @@ namespace Synergy
 class Synergy::MasterMode : public Mode
 {
 
+    using SlavesMap = std::map<Slave::id_t, Slave *>;
+
+
     static const unsigned int LedHighQuant = 50;
 
 
     WiFiUDP mUdp;
     bool mRunning;
-    std::map<Slave::id_t, Slave *> mSlaves;
+    SlavesMap mSlaves;
     std::map<Job::id_t, Job *> mJobs;
     RoughSquareWave mLed;
 
 
     void parseUdp();
-    void addSlave(Slave *slave);
     void updateJobsHeartbeats();
+
+    Slave *createSlave(const IPAddress &addr);
+    SlavesMap::iterator deleteSlave(SlavesMap::iterator &it);
+
+    void uartSendJobFinished(Job *job);
 
 
 public:
 
     static const uint16_t Port = 1001;
+    static const size_t MaxSlaves = 8;
+    static const size_t MaxJobs = 64;
 
 
     MasterMode();
